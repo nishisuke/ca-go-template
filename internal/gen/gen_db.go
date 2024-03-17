@@ -49,9 +49,9 @@ package entity
 
 type (
 	{{.Name}} struct {
-		ID {{.IDType}} {{if and .IsGorm not .HasGateway}} ` + "`" + `gorm:"primaryKey"` + "`" + ` {{end}}
-{{if and .IsGorm not .HasGateway}} CreatedAt time.Time {{end}}
-{{if and .IsGorm not .HasGateway}} UpdatedAt time.Time{{end}}
+		ID {{.IDType}} {{if and .IsGorm (not .HasGateway)}} ` + "`" + `gorm:"primaryKey"` + "`" + ` {{end}}
+{{if and .IsGorm (not .HasGateway)}} CreatedAt time.Time {{end}}
+{{if and .IsGorm (not .HasGateway)}} UpdatedAt time.Time{{end}}
 	}
 )
 
