@@ -77,8 +77,7 @@ Create{{.Name}}(ctx context.Context, dto *{{.Name}}DTO) (error)
 	}
 	RO{{.Name}}AdapterDriverPort interface {
 Fetch{{.Name}}ByID(ctx context.Context, id {{.IDType}}) (*{{.Name}}DTO, error) 
-	}
-)
+	})
 
 func new{{.Name}}DTO(id {{.IDType}}) *{{.Name}}DTO {
 	return &{{.Name}}DTO{
@@ -144,7 +143,7 @@ func New{{.Name}}Repo(db {{if .IsDBSQL }}  *sql.DB  {{end}}{{if .IsGorm }}  *gor
 	}
 }
 
-func (r {{.Name}}Repo) Create{{.Name}} (ctx context.Context, dto *gateway.{{.Name}}{{if .HasGateway}}DTO{{end}}) error {
+func (r {{.Name}}Repo) Create{{.Name}} (ctx context.Context, dto *{{if .HasGateway}}gateway{{else}}entity{{end}}.{{.Name}}{{if .HasGateway}}DTO{{end}}) error {
 	panic("implement Create{{.Name}}")
 }
 
@@ -152,7 +151,7 @@ func (r {{.Name}}Repo) Delete{{.Name}} (ctx context.Context, id {{.IDType}}) err
 	panic("implement Delete{{.Name}}")
 }
 
-func (ro RO{{.Name}}Repo) Fetch{{.Name}}ByID (ctx context.Context, id {{.IDType}} ) (*gateway.{{.Name}}{{if .HasGateway}}DTO{{end}}, error) {
+func (ro RO{{.Name}}Repo) Fetch{{.Name}}ByID (ctx context.Context, id {{.IDType}} ) (*{{if .HasGateway}}gateway{{else}}entity{{end}}.{{.Name}}{{if .HasGateway}}DTO{{end}}, error) {
 	panic("implement Fetch{{.Name}}ByID")
 }
 `
