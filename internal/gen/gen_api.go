@@ -13,12 +13,13 @@ import (
 
 type GenAPICmd struct {
 	dir string
+	fw  string
 }
 
 func (*GenAPICmd) Name() string     { return "gen_api" }
 func (*GenAPICmd) Synopsis() string { return "Generate api" }
 func (*GenAPICmd) Usage() string {
-	return `gen_api <name>:
+	return `gen_api [-fw <framework name>] <name>:
 
   Generate controller and usecase.
 
@@ -27,12 +28,15 @@ func (*GenAPICmd) Usage() string {
 
 func (p *GenAPICmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&p.dir, "d", "", "directory")
+	f.StringVar(&p.fw, "fw", "net/http", "framework. supported values are net/http, echo.")
 }
 
 func (p *GenAPICmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	i := struct {
-		Name string
-	}{Name: f.Arg(0)}
+		Name      string
+		IsEcho    bool
+		IsNetHTTP bool
+	}{Name: f.Arg(0), IsEcho: p.fw == "echo", IsNetHTTP: p.fw == "net/http"}
 
 	const usecaseTemp = `
 package usecase
@@ -75,6 +79,8 @@ func New{{.Name}}Controller(usecase *usecase.{{.Name}}Usecase) *{{.Name}}Control
 	}
 }
 
+
+{{if .IsNetHTTP}}
 func (u {{.Name}}Controller) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var input usecase.{{.Name}}UsecaseInput
@@ -84,6 +90,20 @@ func (u {{.Name}}Controller) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	_=output
 }
+{{end}}
+
+{{if .IsEcho}}
+func (u {{.Name}}Controller) EchoHandler(c echo.Context) error {
+	ctx := c.Request().Context()
+	var input usecase.{{.Name}}UsecaseInput
+	output, err := u.usecase.Exec(ctx, &input)
+	if err != nil {
+		return err
+	}
+	_=output
+	return nil
+}
+{{end}}
 `
 
 	var ubuf bytes.Buffer
