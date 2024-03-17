@@ -49,7 +49,9 @@ package entity
 
 type (
 	{{.Name}} struct {
-		ID {{.IDType}}
+		ID {{.IDType}} {{if and .IsGorm not .HasGateway}} ` + "`" + `gorm:"primaryKey"` + "`" + ` {{end}}
+{{if and .IsGorm not .HasGateway}} CreatedAt time.Time {{end}}
+{{if and .IsGorm not .HasGateway}} UpdatedAt time.Time{{end}}
 	}
 )
 
@@ -65,7 +67,9 @@ package gateway
 
 type (
 	{{.Name}}DTO struct {
-		ID {{.IDType}}
+		ID {{.IDType}}  {{if .IsGorm}} ` + "`" + `gorm:"primaryKey"` + "`" + ` {{end}}
+{{if .IsGorm}}CreatedAt time.Time {{end}}
+{{if .IsGorm}} UpdatedAt time.Time{{end}}
 	}
 	{{.Name}}Gateway struct {
 		repo {{.Name}}AdapterDriverPort
