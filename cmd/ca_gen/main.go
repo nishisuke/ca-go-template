@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/google/subcommands"
-	"github.com/nishisuke/clean-architecture-go/internal/gen"
+	"github.com/nishisuke/ca-go-template/internal/gen"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module github.com/nishisuke/clean-architecture-go
+module github.com/nishisuke/ca-go-template
 
 go 1.21.3
 
