@@ -14,12 +14,13 @@ import (
 type GenDBCmd struct {
 	dir    string
 	idType string
+	lib    string
 }
 
 func (*GenDBCmd) Name() string     { return "gen_db" }
 func (*GenDBCmd) Synopsis() string { return "Generate db" }
 func (*GenDBCmd) Usage() string {
-	return `gen_db <name>:
+	return `gen_db [-l gorm] <name>:
 
   Generate adapter and driver.
 
@@ -29,13 +30,16 @@ func (*GenDBCmd) Usage() string {
 func (p *GenDBCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&p.dir, "d", "", "directory")
 	f.StringVar(&p.idType, "id", "int64", "id type")
+	f.StringVar(&p.lib, "lib", "database/sql", "database library. supported values are database/sql, gorm")
 }
 
 func (p *GenDBCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	i := struct {
-		Name   string
-		IDType string
-	}{Name: f.Arg(0), IDType: p.idType}
+		Name    string
+		IDType  string
+		IsGorm  bool
+		IsDBSQL bool
+	}{Name: f.Arg(0), IDType: p.idType, IsGorm: p.lib == "gorm", IsDBSQL: p.lib == "database/sql"}
 
 	const entityTemplate = `
 package entity
@@ -119,17 +123,21 @@ package repo
 
 type (
 	{{.Name}}Repo struct {
+		db {{if .IsDBSQL }}  *sql.DB  {{end}}{{if .IsGorm }}  *gorm.DB  {{end}}	
 	}
 	RO{{.Name}}Repo struct {
+		db {{if .IsDBSQL }}  *sql.DB  {{end}}{{if .IsGorm }}  *gorm.DB  {{end}}	
 	}
 )
 
-func NewRO{{.Name}}Repo() *RO{{.Name}}Repo {
+func NewRO{{.Name}}Repo(db {{if .IsDBSQL }}  *sql.DB  {{end}}{{if .IsGorm }}  *gorm.DB  {{end}}	) *RO{{.Name}}Repo {
 	return &RO{{.Name}}Repo{
+		db:db,
 	}
 }
-func New{{.Name}}Repo() *{{.Name}}Repo {
+func New{{.Name}}Repo(db {{if .IsDBSQL }}  *sql.DB  {{end}}{{if .IsGorm }}  *gorm.DB  {{end}}	) *{{.Name}}Repo {
 	return &{{.Name}}Repo{
+		db:db,
 	}
 }
 
