@@ -12,9 +12,10 @@ import (
 )
 
 type GenDBCmd struct {
-	dir    string
-	idType string
-	lib    string
+	dir        string
+	idType     string
+	lib        string
+	hasGateway bool
 }
 
 func (*GenDBCmd) Name() string     { return "gen_db" }
@@ -31,15 +32,17 @@ func (p *GenDBCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&p.dir, "d", "", "directory")
 	f.StringVar(&p.idType, "id", "int64", "id type")
 	f.StringVar(&p.lib, "lib", "database/sql", "database library. supported values are database/sql, gorm")
+	f.BoolVar(&p.hasGateway, "g", false, "generate gateway")
 }
 
 func (p *GenDBCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	i := struct {
-		Name    string
-		IDType  string
-		IsGorm  bool
-		IsDBSQL bool
-	}{Name: f.Arg(0), IDType: p.idType, IsGorm: p.lib == "gorm", IsDBSQL: p.lib == "database/sql"}
+		Name       string
+		IDType     string
+		IsGorm     bool
+		IsDBSQL    bool
+		HasGateway bool
+	}{Name: f.Arg(0), IDType: p.idType, IsGorm: p.lib == "gorm", IsDBSQL: p.lib == "database/sql", HasGateway: p.hasGateway}
 
 	const entityTemplate = `
 package entity
@@ -141,7 +144,7 @@ func New{{.Name}}Repo(db {{if .IsDBSQL }}  *sql.DB  {{end}}{{if .IsGorm }}  *gor
 	}
 }
 
-func (r {{.Name}}Repo) Create{{.Name}} (ctx context.Context, dto *gateway.{{.Name}}DTO) error {
+func (r {{.Name}}Repo) Create{{.Name}} (ctx context.Context, dto *gateway.{{.Name}}{{if .HasGateway}}DTO{{end}}) error {
 	panic("implement Create{{.Name}}")
 }
 
@@ -149,7 +152,7 @@ func (r {{.Name}}Repo) Delete{{.Name}} (ctx context.Context, id {{.IDType}}) err
 	panic("implement Delete{{.Name}}")
 }
 
-func (ro RO{{.Name}}Repo) Fetch{{.Name}}ByID (ctx context.Context, id {{.IDType}} ) (*gateway.{{.Name}}DTO, error) {
+func (ro RO{{.Name}}Repo) Fetch{{.Name}}ByID (ctx context.Context, id {{.IDType}} ) (*gateway.{{.Name}}{{if .HasGateway}}DTO{{end}}, error) {
 	panic("implement Fetch{{.Name}}ByID")
 }
 `
@@ -181,15 +184,17 @@ func (ro RO{{.Name}}Repo) Fetch{{.Name}}ByID (ctx context.Context, id {{.IDType}
 		return subcommands.ExitFailure
 	}
 
-	gdir, err := mkdir(".", p.dir, "gateway")
-	if err != nil {
-		fmt.Println(err)
-		return subcommands.ExitFailure
-	}
+	if p.hasGateway {
+		gdir, err := mkdir(".", p.dir, "gateway")
+		if err != nil {
+			fmt.Println(err)
+			return subcommands.ExitFailure
+		}
 
-	if err := write(filepath.Join(gdir, i.Name+"Gateway.go"), gbuf.Bytes()); err != nil {
-		fmt.Println(err)
-		return subcommands.ExitFailure
+		if err := write(filepath.Join(gdir, i.Name+"Gateway.go"), gbuf.Bytes()); err != nil {
+			fmt.Println(err)
+			return subcommands.ExitFailure
+		}
 	}
 
 	rdir, err := mkdir(".", p.dir, "repo")
